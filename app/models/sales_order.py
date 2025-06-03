@@ -5,8 +5,8 @@ class SalesOrder(db.Model):
     __tablename__ = 'sales_orders'
     
     id = db.Column(db.Integer, primary_key=True)
-    so_number = db.Column(db.String(50), unique=True, nullable=False)
-    po_number = db.Column(db.String(50))
+    so_number = db.Column(db.String(50), unique=True, nullable=False)  # Rasco's internal SO number
+    customer_so_number = db.Column(db.String(50))  # Customer's Sales Order number (was po_number)
     date = db.Column(db.Date, nullable=False)
     quotation_id = db.Column(db.Integer, db.ForeignKey('quotations.id'), nullable=False)
     customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)

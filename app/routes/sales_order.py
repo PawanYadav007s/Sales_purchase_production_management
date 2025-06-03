@@ -17,7 +17,7 @@ def index():
     if search:
         query = query.filter(or_(
             SalesOrder.so_number.ilike(f'%{search}%'),
-            SalesOrder.po_number.ilike(f'%{search}%'),
+            SalesOrder.customer_so_number.ilike(f'%{search}%'),
             Customer.name.ilike(f'%{search}%'),
             Quotation.quotation_number.ilike(f'%{search}%')
         ))
@@ -41,7 +41,7 @@ def add():
             
             sales_order = SalesOrder(
                 so_number=so_number,
-                po_number=request.form['po_number'],
+                customer_so_number=request.form['customer_so_number'],
                 date=datetime.strptime(request.form['date'], '%Y-%m-%d').date(),
                 quotation_id=quotation_id,
                 customer_id=quotation.customer_id,
@@ -73,7 +73,7 @@ def edit(id):
     
     if request.method == 'POST':
         try:
-            sales_order.po_number = request.form['po_number']
+            sales_order.customer_so_number = request.form['customer_so_number']
             sales_order.date = datetime.strptime(request.form['date'], '%Y-%m-%d').date()
             sales_order.delivery_date = datetime.strptime(request.form['delivery_date'], '%Y-%m-%d').date() if request.form.get('delivery_date') else None
             sales_order.status = request.form['status']
@@ -120,12 +120,12 @@ def export_csv():
     
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(['SO No', 'PO No', 'Date', 'Customer', 'Quotation No', 'Delivery Date', 'Status'])
+    writer.writerow(['Rasco SO No', 'Customer SO No', 'Date', 'Customer', 'Quotation No', 'Delivery Date', 'Status'])
     
     for so in sales_orders:
         writer.writerow([
             so.so_number,
-            so.po_number,
+            so.customer_so_number or '',
             so.date.strftime('%Y-%m-%d'),
             so.customer.name,
             so.quotation.quotation_number,
