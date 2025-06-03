@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h2">Edit Sales Order</h1>
+    <a href="{{ url_for('sales_order.index') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">SO Number</label>
+                    <input type="text" class="form-control" value="{{ sales_order.so_number }}" readonly>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Quotation</label>
+                    <input type="text" class="form-control" value="{{ sales_order.quotation.quotation_number }}" readonly>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Customer</label>
+                    <input type="text" class="form-control" value="{{ sales_order.customer.name }}" readonly>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">PO Number <span class="text-danger">*</span></label>
+                    <input type="text" name="po_number" class="form-control" value="{{ sales_order.po_number }}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Date <span class="text-danger">*</span></label>
+                    <input type="date" name="date" class="form-control" value="{{ sales_order.date }}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Delivery Date</label>
+                    <input type="date" name="delivery_date" class="form-control" value="{{ sales_order.delivery_date or '' }}">
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="Active" {% if sales_order.status == 'Active' %}selected{% endif %}>Active</option>
+                        <option value="Completed" {% if sales_order.status == 'Completed' %}selected{% endif %}>Completed</option>
+                        <option value="Cancelled" {% if sales_order.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Update Sales Order</button>
+            <a href="{{ url_for('sales_order.index') }}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

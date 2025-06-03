@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h2">Quotations</h1>
+    <div>
+        <a href="{{ url_for('quotation.export_csv') }}" class="btn btn-success">
+            <i class="fas fa-file-csv"></i> Export CSV
+        </a>
+        <a href="{{ url_for('quotation.add') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create Quotation
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('quotation.index') }}">
+            <div class="input-group">
+                <input type="text" name="search" class="form-control" placeholder="Search quotations..." value="{{ search }}">
+                <button class="btn btn-outline-secondary" type="submit">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                {% if search %}
+                <a href="{{ url_for('quotation.index') }}" class="btn btn-outline-danger">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Quotation No</th>
+                    <th>RFQ No</th>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for quotation in quotations %}
+                <tr>
+                    <td>{{ quotation.quotation_number }}</td>
+                    <td>{{ quotation.rfq_number or '-' }}</td>
+                    <td>{{ quotation.date.strftime('%d-%m-%Y') }}</td>
+                    <td>{{ quotation.customer.name }}</td>
+                    <td>₹{{ "{:,.2f}".format(quotation.total_amount) }}</td>
+                    <td>
+                        <span class="badge bg-{{ 'success' if quotation.status == 'Accepted' else 'warning' if quotation.status == 'Pending' else 'danger' }}">
+                            {{ quotation.status }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('quotation.view', id=quotation.id) }}" class="btn btn-sm btn-info">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        {% if quotation.status != 'Accepted' %}
+                        <a href="{{ url_for('quotation.edit', id=quotation.id) }}" class="btn btn-sm btn-warning">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        {% endif %}
+                        {% if not quotation.sales_orders %}
+                        <form method="POST" action="{{ url_for('quotation.delete', id=quotation.id) }}" style="display: inline-block;" onsubmit="return confirm('Are you sure?');">
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        {% if not quotations %}
+        <p class="text-center text-muted">No quotations found.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

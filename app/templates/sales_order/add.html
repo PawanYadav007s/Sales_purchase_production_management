@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h2">Create Sales Order</h1>
+    <a href="{{ url_for('sales_order.index') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+</div>
+
+{% if not quotations %}
+<div class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle"></i> No pending quotations available. Please create a quotation first.
+</div>
+{% else %}
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Select Quotation <span class="text-danger">*</span></label>
+                    <select name="quotation_id" id="quotation_id" class="form-select" required>
+                        <option value="">Select Pending Quotation</option>
+                        {% for quotation in quotations %}
+                        <option value="{{ quotation.id }}" 
+                                data-customer="{{ quotation.customer.name }}"
+                                data-amount="{{ quotation.total_amount }}">
+                            {{ quotation.quotation_number }} - {{ quotation.customer.name }} - ₹{{ "{:,.2f}".format(quotation.total_amount) }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Customer PO Number <span class="text-danger">*</span></label>
+                    <input type="text" name="po_number" class="form-control" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Date <span class="text-danger">*</span></label>
+                    <input type="date" name="date" class="form-control" required value="{{ today }}">
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Expected Delivery Date</label>
+                    <input type="date" name="delivery_date" class="form-control">
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label">Customer Name</label>
+                    <input type="text" id="customer_name" class="form-control" readonly>
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                <strong>Note:</strong> Creating this sales order will automatically change the selected quotation status to "Accepted".
+            </div>
+
+            <button type="submit" class="btn btn-primary">Create Sales Order</button>
+            <a href="{{ url_for('sales_order.index') }}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    $('#quotation_id').change(function() {
+        var selectedOption = $(this).find('option:selected');
+        var customerName = selectedOption.data('customer');
+        $('#customer_name').val(customerName || '');
+    });
+});
+</script>
+
+{% endif %}
+{% endblock %}

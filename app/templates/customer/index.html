@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h2">Customers</h1>
+    <a href="{{ url_for('customer.add') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Add Customer
+    </a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('customer.index') }}">
+            <div class="input-group">
+                <input type="text" name="search" class="form-control" placeholder="Search customers..." value="{{ search }}">
+                <button class="btn btn-outline-secondary" type="submit">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                {% if search %}
+                <a href="{{ url_for('customer.index') }}" class="btn btn-outline-danger">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>GST No</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for customer in customers %}
+                <tr>
+                    <td>{{ customer.name }}</td>
+                    <td>{{ customer.email or '-' }}</td>
+                    <td>{{ customer.phone or '-' }}</td>
+                    <td>{{ customer.gst_no or '-' }}</td>
+                    <td>
+                        <a href="{{ url_for('customer.edit', id=customer.id) }}" class="btn btn-sm btn-info">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <form method="POST" action="{{ url_for('customer.delete', id=customer.id) }}" style="display: inline-block;" onsubmit="return confirm('Are you sure?');">
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        {% if not customers %}
+        <p class="text-center text-muted">No customers found.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
