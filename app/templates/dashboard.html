@@ -1,27 +1,383 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<style>
+    .stat-card {
+        transition: transform 0.3s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+    }
+    .activity-item {
+        border-left: 3px solid #007bff;
+        padding-left: 10px;
+        margin-bottom: 10px;
+    }
+    .loading {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 3px solid #007bff;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
-    <h1 class="h2 mb-4">Dashboard</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">Dashboard</h1>
+        <div>
+            <span class="text-muted">Last updated: <span id="last-update">-</span></span>
+            <button class="btn btn-sm btn-primary ms-2" onclick="loadDashboardData()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+    </div>
     
-    <div class="row">
+    <!-- Main Statistics Cards -->
+    <div class="row mb-4">
         <div class="col-md-3">
-            <div class="card">
+            <div class="card stat-card text-white bg-primary">
                 <div class="card-body">
-                    <h5 class="card-title">Total Quotations</h5>
-                    <h2 class="text-primary">0</h2>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Total Customers</h6>
+                            <h2 class="mb-0" id="total-customers">
+                                <div class="loading"></div>
+                            </h2>
+                        </div>
+                        <i class="fas fa-users fa-2x opacity-50"></i>
+                    </div>
                 </div>
             </div>
         </div>
         
         <div class="col-md-3">
+            <div class="card stat-card text-white bg-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Total Quotations</h6>
+                            <h2 class="mb-0" id="total-quotations">
+                                <div class="loading"></div>
+                            </h2>
+                            <small id="pending-quotations">- pending</small>
+                        </div>
+                        <i class="fas fa-file-invoice fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card stat-card text-white bg-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Sales Orders</h6>
+                            <h2 class="mb-0" id="total-orders">
+                                <div class="loading"></div>
+                            </h2>
+                            <small id="active-orders">- active</small>
+                        </div>
+                        <i class="fas fa-shopping-cart fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card stat-card text-white bg-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Conversion Rate</h6>
+                            <h2 class="mb-0" id="conversion-rate">
+                                <div class="loading"></div>
+                            </h2>
+                        </div>
+                        <i class="fas fa-percentage fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Financial Overview -->
+    <div class="row mb-4">
+        <div class="col-md-4">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">Total Sales Orders</h5>
-                    <h2 class="text-success">0</h2>
+                    <h6 class="card-title">Total Quotation Value</h6>
+                    <h3 class="text-primary" id="total-quotation-value">
+                        <div class="loading"></div>
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Total Order Value</h6>
+                    <h3 class="text-success" id="total-order-value">
+                        <div class="loading"></div>
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">This Month's Revenue</h6>
+                    <h3 class="text-info" id="monthly-revenue">
+                        <div class="loading"></div>
+                    </h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts and Activity -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Quotation Status Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="quotationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Recent Activity (Last 7 Days)</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h3 class="text-info" id="recent-quotations">0</h3>
+                            <p class="text-muted mb-0">New Quotations</p>
+                        </div>
+                        <div class="col-6">
+                            <h3 class="text-success" id="recent-orders">0</h3>
+                            <p class="text-muted mb-0">New Orders</p>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row text-center">
+                        <div class="col-12">
+                            <h6>This Month</h6>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-info" id="monthly-quotations">0</h4>
+                            <p class="text-muted mb-0">Quotations</p>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-success" id="monthly-orders">0</h4>
+                            <p class="text-muted mb-0">Orders</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Latest Activities -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Latest Quotations</h6>
+                </div>
+                <div class="card-body">
+                    <div id="latest-quotations">
+                        <div class="text-center"><div class="loading"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Latest Sales Orders</h6>
+                </div>
+                <div class="card-body">
+                    <div id="latest-orders">
+                        <div class="text-center"><div class="loading"></div></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+let quotationChart = null;
+
+function formatCurrency(amount) {
+    return '₹' + amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function loadDashboardData() {
+    fetch('{{ url_for("main.dashboard_stats") }}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateDashboard(data.data);
+            } else {
+                console.error('Error loading dashboard data:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+}
+
+function updateDashboard(data) {
+    // Update basic counts
+    document.getElementById('total-customers').innerHTML = data.counts.customers;
+    document.getElementById('total-quotations').innerHTML = data.counts.quotations;
+    document.getElementById('pending-quotations').innerHTML = data.counts.pending_quotations + ' pending';
+    document.getElementById('total-orders').innerHTML = data.counts.sales_orders;
+    document.getElementById('active-orders').innerHTML = data.counts.active_orders + ' active';
+    document.getElementById('conversion-rate').innerHTML = data.conversion_rate + '%';
+    
+    // Update financial data
+    document.getElementById('total-quotation-value').innerHTML = formatCurrency(data.financial.total_quotation_value);
+    document.getElementById('total-order-value').innerHTML = formatCurrency(data.financial.total_order_value);
+    document.getElementById('monthly-revenue').innerHTML = formatCurrency(data.financial.monthly_revenue);
+    
+    // Update recent activity
+    document.getElementById('recent-quotations').innerHTML = data.recent.quotations;
+    document.getElementById('recent-orders').innerHTML = data.recent.orders;
+    document.getElementById('monthly-quotations').innerHTML = data.monthly.quotations;
+    document.getElementById('monthly-orders').innerHTML = data.monthly.orders;
+    
+    // Update last update time
+    document.getElementById('last-update').innerHTML = data.timestamp;
+    
+    // Update or create quotation chart
+    updateQuotationChart(data.quotation_stats);
+    
+    // Update latest activities
+    updateLatestQuotations(data.latest_quotations);
+    updateLatestOrders(data.latest_orders);
+}
+
+function updateQuotationChart(stats) {
+    const ctx = document.getElementById('quotationChart').getContext('2d');
+    
+    if (quotationChart) {
+        quotationChart.data.datasets[0].data = [stats.pending, stats.accepted, stats.rejected];
+        quotationChart.update();
+    } else {
+        quotationChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Pending', 'Accepted', 'Rejected'],
+                datasets: [{
+                    data: [stats.pending, stats.accepted, stats.rejected],
+                    backgroundColor: ['#ffc107', '#28a745', '#dc3545'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+}
+
+function updateLatestQuotations(quotations) {
+    let html = '';
+    if (quotations.length === 0) {
+        html = '<p class="text-muted text-center">No quotations yet</p>';
+    } else {
+        quotations.forEach(q => {
+            let statusClass = q.status === 'Accepted' ? 'success' : q.status === 'Pending' ? 'warning' : 'danger';
+            html += `
+                <div class="activity-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>${q.number}</strong>
+                            <br><small class="text-muted">${q.customer}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-${statusClass} status-badge">${q.status}</span>
+                            <br><small class="text-muted">${formatCurrency(q.amount)}</small>
+                        </div>
+                    </div>
+                    <small class="text-muted">${q.date}</small>
+                </div>
+            `;
+        });
+    }
+    document.getElementById('latest-quotations').innerHTML = html;
+}
+
+function updateLatestOrders(orders) {
+    let html = '';
+    if (orders.length === 0) {
+        html = '<p class="text-muted text-center">No sales orders yet</p>';
+    } else {
+        orders.forEach(so => {
+            let statusClass = so.status === 'Completed' ? 'success' : so.status === 'Active' ? 'primary' : 'danger';
+            html += `
+                <div class="activity-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>${so.number}</strong>
+                            <br><small class="text-muted">${so.customer}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-${statusClass} status-badge">${so.status}</span>
+                            <br><small class="text-muted">${formatCurrency(so.amount)}</small>
+                        </div>
+                    </div>
+                    <small class="text-muted">${so.date}</small>
+                </div>
+            `;
+        });
+    }
+    document.getElementById('latest-orders').innerHTML = html;
+}
+
+// Load dashboard data when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardData();
+    
+    // Auto-refresh every 30 seconds
+    setInterval(loadDashboardData, 30000);
+});
+</script>
 {% endblock %}
